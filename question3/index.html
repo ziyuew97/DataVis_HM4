@@ -21,6 +21,17 @@
         h1 {
             /* border: 2px solid green; */
         }
+
+        .pop-up {
+            position: absolute;
+            border: 1px solid black;
+            border-radius: 1px;
+            line-height: 1.2;
+            width: 200px;
+            pointer-events: none;
+            background-color: white;
+            padding: 10px;
+        }
     </style>
     <!-- add your script blocks at the end -->
 
@@ -35,6 +46,8 @@
         <svg width="1050px" height="750px">
 
         </svg>
+        <div class="pop-up">
+        </div>
     </div>
 </body>
 
@@ -92,6 +105,56 @@
             .attr("transform", d => `translate(${projection([d.geometry.coordinates[0], d.geometry.coordinates[1]])})`)
             .attr("r", d => Math.sqrt(d.properties.pop_18_in_poverty/150))
 
+        let popup = d3.select(".pop-up")
+
+        circles.on("mouseover", (event, d) => {
+
+            circles
+                .style("stroke", "#fff")
+                .style("stroke-width", .5)
+                .style("fill", "lightcoral")
+                .style("fill-opacity", .5)
+
+            svg.select(".p-" + d.properties.GEOID)
+                .style("stroke", "black")
+                .style("stroke-width", 2)
+                .style("fill", "yellow")
+                .style("fill-opacity", 1)
+                .raise()
+
+            // let reScaleLang = d3.scaleThreshold()
+            //     .domain([0]) //make sure to put this in brackets!
+            //     .range(["below", "above"])
+
+            let num = +d.properties.pop_18_in_poverty
+
+            let lang = "In " + d.properties.Geo_NAME + ", " + " the number of children under poverty is "
+            lang += d3.format(".1f")(Math.abs(num)) + "."
+
+            popup
+                .style("opacity", 1)
+                .style("left", (event.x - 100) + "px")
+                .style("top", (event.y - 150) + "px")
+                .html(lang)
+
+        })
+   
+        circles.on("mouseout", (event, d) => {
+            // console.log(event)
+            circles
+                .style("stroke", "#fff")
+                .style("stroke-width", .5)
+                .style("fill", "lightcoral")
+                .style("fill-opacity", .5)
+
+            popup
+                .style("opacity", 0)
+
+        })
+   
+   
+   
+   
     })
 
 
