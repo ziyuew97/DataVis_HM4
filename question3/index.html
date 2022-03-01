@@ -91,7 +91,7 @@
             .attr("stroke", "#fff")
             .attr("fill-opacity", 0.5)
             .attr("stroke-width", 0.8)
-            .attr("transform", d => 'translate(${projection([d.geometry.coordinates[0], d.geometry.coordinates[1]])})')
+            .attr("transform", d => `translate(${projection([d.geometry.coordinates[0], d.geometry.coordinates[1]])})`)
             .attr("r", d => Math.sqrt(d.properties.pop_18_in_poverty/150))
 
     })
