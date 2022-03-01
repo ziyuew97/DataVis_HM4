@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        .chart-container {
+            max-width: 1050px;
+            /* border: 3px solid red; */
+            margin: 0 auto;
+            /* auto centers the div */
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+        }
+
+        svg {
+            /* border: 2px solid purple; */
+            overflow: visible;
+        }
+
+
+        h1 {
+            /* border: 2px solid green; */
+        }
+    </style>
+    <!-- add your script blocks at the end -->
+
+</head>
+
+<body>
+    <div class="chart-container">
+        <h1 class="headline">
+            Population Poverty
+        </h1>
+
+        <svg width="1050px" height="750px">
+
+        </svg>
+    </div>
+</body>
+
+
+<!-- we're using d3 version 6 (the latest version) for all out work -->
+<script src="https://d3js.org/d3.v6.min.js"></script>
+
+<!-- load topojson script -->
+<script src="https://unpkg.com/topojson@3"></script>
+
+<script>
+    console.log({d3})
+    console.log({topojson})
+
+
+    //助教的码
+    let width = 1050;
+    let height = 700;
+    let svg = d3. select('body').select('svg')
+
+    let margin = { top: 10, right: 10, bottom: 0, left: 20};
+
+    d3.json("output.json")
+    .then(function(data){
+        console.log("loaded")
+        console.log(data)
+
+        let counties = topojson.feature(data, data.objects.county)
+        let states = topojson.feature(data, data.objects.states)
+        console.log(counties)
+
+        let projection = d3.geoIdentity()
+            .fitSize([width, height], states)
+            .reflectY(true)
+        
+        let path = d3.geoPath(projection)
+
+
+        svg.append("g")
+            .attr("class", "states")
+            .selectAll("path")
+            .data(states.features)
+            .join("path")
+            .attr("d", path)
+            .attr("fill", "lightgrey")
+            .attr("stroke", "white")
+
+        let circles = svg.append("g")
+            .selectAll(".circles")
+            .data(counties.features.filter(d => d.geometry != null).sort((a,b)=> d3.descending(a.properties.pop_18_in_poverty, b.properties.pop_18_in_poverty)))
+            .join("circle")
+            .attr("class", function (d) {return "circie p-" + d.properties.GEOID})
+            .attr("fill","lightcoral")
+            .attr("stroke", "#fff")
+            .attr("fill-opacity", 0.5)
+            .attr("stroke-width", 0.8)
+            .attr("transform", d => 'translate(${projection([d.geometry.coordinates[0], d.geometry.coordinates[1]])})')
+            .attr("r", d => Math.sqrt(d.properties.pop_18_in_poverty/150))
+
+    })
+
+
+
+
+
+
+
+</script>
