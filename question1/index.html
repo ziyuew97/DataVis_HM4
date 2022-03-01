@@ -1,26 +1,22 @@
 <!DOCTYPE html>
 <html>
 
-
 <head>
     <meta charset="utf-8">
     <!-- set styles on the top -->
     <style>
         .chart-container {
             max-width: 1050px;
-            position: relative;
+            /* border: 2px solid red; */
             margin: 0 auto;
             /* auto centers the div */
-
             font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-
         }
 
         svg {
             /* border: 2px solid purple; */
             overflow: visible;
         }
-
 
         h1 {
             margin-left: 30px;
@@ -45,6 +41,7 @@
         .y .tick text {
             font-size: 14px;
             fill: #333;
+
         }
 
         .x .tick text {
@@ -52,47 +49,27 @@
             fill: #333;
         }
 
-        .x.label {
-            text-transform: uppercase;
-            font-size: 13px;
-            /* font-family: Arial, Helvetica, sans-serif; */
-            letter-spacing: .02em;
-            font-weight: 100;
-
-        }
-
-        .pop-up {
-            position: absolute;
-            border: 1px solid black;
-            border-radius: 1px;
-            line-height: 1.2;
-            width: 200px;
-            pointer-events: none;
-            background-color: white;
-            padding: 10px;
-        }
-
-        .annotation {
-            font-size: 15px;
-            font-family: Arial, Helvetica, sans-serif;
-            font-style: italic;
+        .label {
+            font-size: 35px;
             font-weight: 200;
-
         }
 
-        .change-btn {
-            margin: 10px 0 0 30px;
-            width: 250px;
-            cursor: pointer;
+        .axis-label {
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .source {
+            max-width: 1000px;
+            margin: 0 auto;
         }
 
         .highlight {
-            color: orange;
             text-decoration: underline;
         }
 
         .filler {
-            height: 10rem;
+            height: 5rem;
             text-align: center;
         }
 
@@ -101,6 +78,15 @@
             font-size: 54px;
         }
 
+        .filler p {
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            font-size: 24px;
+            text-align: left;
+            margin: 20px auto;
+            line-height: 1.2;
+            max-width: 600px
+            
+        }
 
         #scrolly-overlay .scrolly {
             font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
@@ -158,7 +144,7 @@
 
         #scrolly-overlay .scrolly svg {
             position: absolute;
-            top: 50%;
+            top: 20%;
             left: 5%;
             transform: translateY(-50%);
             width: 90%;
@@ -166,21 +152,21 @@
             background-color: #f4f4f4;
         }
 
-
         .spacer {
             height: 1500px;
         }
 
+
+
     </style>
 </head>
 
-
-
 <body>
+
     <section class ='filler' >
         
         <h1 class="headline">
-            Test Scores for <span class="highlight">3rd Grade</span> in 2000 Large Districts
+            Healthcare by income: <span class ='highlight'>in 2020</span> 
         </h1>
 
     </section>
@@ -190,175 +176,349 @@
         <div class='scrolly'>
             <!-- <button class="change-btn">Switch to 8th grade</button> -->
             <figure class='sticky'>              
-                <svg width="1050px" height="1000px"></svg>
+                <svg width="1050px" height="575px"></svg>
                 <!-- <div class="pop-up"></div> -->
             </figure>
 
             <article>
-                <div class='step' data-index='0'>
-                    <p>3rd grade</p>
+                <div class='step'  data-index='0'>
+                    <p>2020</p>
                 </div>
-                <div class='step' data-index='1'>
-                    <p>8th grade</p>
+                <div class='step'  data-index='1'>
+                    <p>2009</p>
                 </div>
             </article>
             
         </div>
     </section>
 
+    <section>
+    
+        <p class="source">Source: Current Population Survey, analysis by Matt Bruenig</p>
+
+    </section>
 </body>
 
-<!-- add your script blocks at the end -->
 <script src="https://d3js.org/d3.v6.min.js"></script>
 <script src="https://unpkg.com/enter-view@1.0.0/enter-view.min.js"></script>
 <!-- we're using d3 version 6 (the latest version) for all out work -->
 
-
 <script>
-    console.log(d3)
+    // console.log({ d3 })
+    const container = d3.select('#scrolly-overlay');
+    const stepSel = container.selectAll('.step'); //final all the step nodes
+
     let width = 800;
     let height = 500;
 
-    let svg = d3.select("body").select("svg");
+    let svg = d3.select("body")
+        .select("svg")
 
-    let sel_var_state = "mnav3poolgcs";
+    d3.csv("healthcare-disposable-inc.csv").then(function (data) {
 
+        console.log({data})
 
-    d3.csv("largest_districts.csv").then(function (data) {
-        console.log("loaded")
+        let margin = { top: 10, right: 10, bottom: 10, left: 30 };
 
-        data.forEach(function (row) {
-            row.ses = +row.ses
-            row.mnav3poolgcs = +row.mnav3poolgcs - 3 //need to standardize
-            row.mnav8poolgcs = +row.mnav8poolgcs - 8 //need to standardize
-            row.totavg = +row.totavg
-        })
+        let sel_cols = [
+            "Medicaid",
+            "Medicare",
+            "Medicare+Medicaid",
+            "Employer",
+            "Uninsured",
+            "Direct Purchase",
+            "Subsidized Exchange",
+            "CHIP",
+            "Military",
+            "Other"]
 
-        console.log(data)
+        let sel_colors = [
+            "#f44336", // "Medicaid",
+            "#FF9800", // "Medicare",
+            "#FDD835", // "Medicare+Medicaid",
+            "#FFF8E1", // "Employer",
+            "#26A69A", // "Uninsured",
+            "#4DD0E1", // "Direct Purchase",
+            "#F06292", // "Subsidized Exchange",
+            "#5C6BC0", // "CHIP",
+            "#90A4AE", // "Military",
+            "#E0E0E0"  // "Other"
+        ]
 
-        let margin = { top: 0, right: 0, bottom: 10, left: 30 };
+        let year_state = 2020;
+
+        let data09 = data.filter(d => d.year == 2009)
+        let data20 = data.filter(d => d.year == 2020)
+
+        console.log({data20})
+        console.log({data09})
+
+    //     //https://github.com/d3/d3-shape#stacks  
+        let series2020 = d3.stack().keys(sel_cols)(data20);
+        let series2009 = d3.stack().keys(sel_cols)(data09);
+
+        console.log(series2009)
+    
+    //     // https://github.com/d3/d3-scale#ordinal-scales
+       let color = d3.scaleOrdinal()
+       .domain(sel_cols)
+       .range(sel_colors)
 
         let x = d3.scaleLinear()
-            .domain(d3.extent(data.map(function (d) { return d.ses })))
-            .range([margin.left, width - margin.right])
-
+            .domain([0,100])
+            .range([margin.left, width])
+        
         let y = d3.scaleLinear()
-            .domain(d3.extent(data.map(function (d) { return d.mnav3poolgcs })))
+            .domain([0,1])
             .range([height - margin.bottom, margin.top])
 
-        var r = d3.scaleSqrt()
-            .domain([0, d3.max(data, function (d) { return d.totavg; })])
-            .range([1, 50]);
-
-        let tickLabels = ["2 yrs. behind", "1 yr behind", "Average", "1 yr. ahead", "2 yrs. ahead", "3 yrs. ahead"];
-
-        let yAxisSettings = d3.axisLeft(y)
-            .ticks(5)
-            .tickSize(-width)
-            .tickFormat((d, i) => tickLabels[i])
-            .tickPadding(10)
-
+    //     //https://github.com/d3/d3-shape#areas    
+        
         let xAxisSettings = d3.axisBottom(x)
-            .ticks(0)
-            .tickSize(10)
-            .tickPadding(10)
-
-        let xAxisTicks = svg.append("g")
+            .tickSize(6)
+            .tickPadding(6)
+            .tickValues([5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95])
+            .tickFormat(d3.format(".0f"))
+        
+        let xAxis = svg.append("g")
             .attr("class", "x axis")
             .call(xAxisSettings)
-            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(g => g.selectAll(".domain").remove())
+            .attr("transform", `translate(0, ${height - margin.bottom})`)
+        
+        let yAxisSettings = d3.axisLeft(y)
+            .ticks(5)
+            .tickValues([.2, .4, .6, .8])
+            .tickSize(6)
+            .tickPadding(4)
+            .tickFormat(d3.format(".0%"))
 
-        svg.append("text")
-            .attr("class", "x label")
-            .attr("text-anchor", "start")
-            .attr("x", margin.left)
-            .attr("y", height + 10)
-            .text("← Poorer Districts");
-
-        svg.append("text")
-            .attr("class", "x label")
-            .attr("text-anchor", "end")
-            .attr("x", width)
-            .attr("y", height + 10)
-            .text("Richer Districts →");
-
-        let shuffled = d3.shuffle(data); //trick
-
-        let yAxisTicks = svg.append("g")
-            .attr("class", "y axis")
+        let yAxis = svg
+            .append("g")
+            .attr("class","y axis")
             .call(yAxisSettings)
-            .attr("transform", `translate(${margin.left},0)`)
-
-        let zeroline = svg.append("line")
-            .attr("x1", margin.left)
-            .attr("x2", width)
-            .attr("y1", y(0))
-            .attr("y2", y(0))
-            .style("stroke", "#333")
-            .style("stroke-width", "1")
-            .style("opacity", 1)
-
-        let popup = d3.select(".pop-up");
-
-        let points = svg.append("g")
-            .selectAll(".points")
-            .data(shuffled)
-            .join("circle")
-            .attr("class", function (d) { return "points p-" + d.leaidC }) // Give circles a class name.
-            .attr("cx", function (d) { return x(d.ses) }) //callback to access the data, position according to x axis
-            .attr("cy", function (d) { return y(d[sel_var_state]) })
-            .attr("r", function (d) { return r(d.totavg) })
-            .style("stroke", "#333333")
-            .style("stroke-width", .5)
-            .style("opacity", 1)
-            .style("fill", "#c0cad8")
-            .style("fill-opacity", .5)
-
-        // let button = d3.select(".change-btn").on("click", update)
-
+            .attr("transform", "transate(30,0)")
+    
+    //      // stacked area
         let hed = d3.select(".headline")
 
-        const container = d3.select('#scrolly-overlay');
-        const stepSel = container.selectAll('.step'); //final all the step nodes
+        let area = d3.area()
+            .x(d => x(d.data.Percentile))
+            .y0(d => y(d[0]))
+            .y1(d => y(d[1]))
 
-        function update() {
+        svg.append("g")
+            .selectAll("path")
+            .data(series2020)
+            .join("path")
+            .attr("class", d => {
+                console.log(d)
+                return d.key
+            })
+            .attr("fill", d => color(d.key))
+            .attr("d", area)
 
-            if (sel_var_state == "mnav3poolgcs") {
-                sel_var_state = "mnav8poolgcs"
-                // button.html("Switch to 3rd grade")
-                hed.html("Test Scores for 8th Grade in 2000 Large Districts")
-                hed.html("Test Scores for <span class='highlight'>8th Grade</span> in 2000 Large Districts")
+    //      //labelling
 
-            } else {
-                sel_var_state = "mnav3poolgcs"
-                // button.html("Switch 8th grade")
-                hed.html("Test Scores for <span class='highlight'>3rd Grade</span> in 2000 Large Districts")
-            }
-
-            var t = d3.transition() //https://github.com/d3/d3-transition
-                .duration(500)
-                // .ease(d3.easeLinear); // play with differeint easing functions https://github.com/d3/d3-ease
-                
-            points
-                .transition(t)
-                .attr("cx", function (d) { return x(d.ses) }) //callback to access the data, position according to x axis
-                .attr("cy", function (d) { return y(d[sel_var_state]) })
-                .attr("r", function (d) { return r(d.totavg) })
-
-        }
+        employer = svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 500)
+                    .attr("y", 250)
+                    .text("Employer")
         
-        function updateChart(index) {
-            const sel = container.select(`[data-index='${index}']`);
-            // const width = sel.attr('data-width');
-            stepSel.classed('is-active', (d, i) => i === index);
-            // container.select('.bar-inner').style('width', width);
-            if ('data-index' == 0 ){
-                update()
+        medicaid = svg.append("text")
+            .attr("class", "label")
+            .attr("x", 80)
+            .attr("y", 450)
+            .text("Medicaid")
+            .style("fill", "white")
+        
+        medicare = svg.append("text")
+            .attr("class", "label")
+            .attr("x", 40)
+            .attr("y", 300)
+            .text("Medicare")
+            .style("fill", "white")
+        
+        uninsured = svg.append("text")
+            .attr("class", "label")
+            .attr("x", 100)
+            .attr("y", 85)
+            .text("Uninsured")
+            .style("fill", "white")
+
+        svg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", width / 2)
+            .attr("y", height + 40)
+            .text("income percentile")
+            .attr("text-anchor", "middle")
+
+        svg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", width - 30)
+            .attr("y", height + 40)
+            .text("higher income")
+            .attr("text-anchor", "middle")
+
+        svg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", 30)
+            .attr("y", height + 40)
+            .text("lower income")
+            .attr("text-anchor", "middle")
+
+    //   //legend
+        let legend_cols = [
+            "Medicare+Medicaid",
+            "Direct Purchase",
+            "Subsidized Exchange",
+            "CHIP",
+            "Military",
+            "Other"]
+        
+        let legend_colors = [
+            "#FDD835", // "Medicare+Medicaid",
+            "#4DD0E1", // "Direct Purchase",
+            "#F06292", // "Subsidized Exchange",
+            "#5C6BC0", // "CHIP",
+            "#90A4AE", // "Military",
+            "#E0E0E0"  // "Other"
+        ]
+
+        var colorlegend = d3.scaleOrdinal()
+            .domain(legend_cols)
+            .range(legend_colors);
+        
+        var size = 20
+        svg.selectAll("mydots")
+            .data(legend_cols)
+            .enter()
+            .append("rect")
+                .attr("x", 810)
+                .attr("y", function(d,i){ return 10 + i*(size+5)})
+                .attr("width", size)
+                .attr("height", size)
+                .style("fill", function(d){ return colorlegend(d)})
+        
+        svg.selectAll("mylabels")
+            .data(legend_cols)
+            .enter()
+            .append("text")
+                .attr("x", 820 + size*1.2)
+                .attr("y", function(d,i){ return 10 + i*(size+5)+(size/2)})
+                .style("fill", function(d){ return colorlegend(d)})
+                .text(function(d){ return d})
+                .style("alignment-baseline", "middle")
+        
+        function update(){
+            console.log("update")
+            console.log("old year state" + year_state);
+
+            if (year_state == 2020) {
+                year_state = 2009
+                dance(series2009)
+                hed.html("Healthcare by income: <span class ='highlight'>in 2009</span>")
+
+                //change label position
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 600)
+                    .attr("y", 270)
+                    .text("Employer")
+
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 100)
+                    .attr("y", 450)
+                    .text("Medicaid")
+                    .style("fill", "white")
+                
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 70)
+                    .attr("y", 330)
+                    .text("Medicare")
+                    .style("fill", "white")
+
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 60)
+                    .attr("y", 140)
+                    .text("Uninsured")
+                    .style("fill", "white")               
+
             } else {
-                update()
+                year_state = 2020
+                dance(series2020)
+                hed.html("Healthcare by income: <span class ='highlight'>in 2020</span>")
+
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 500)
+                    .attr("y", 250)
+                    .text("Employer")
+
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 80)
+                    .attr("y", 450)
+                    .text("Medicaid")
+                    .style("fill", "white")
+                
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 40)
+                    .attr("y", 300)
+                    .text("Medicare")
+                    .style("fill", "white")
+
+                svg.append("text")
+                    .attr("class", "label")
+                    .attr("x", 100)
+                    .attr("y", 85)
+                    .text("Uninsured")
+                    .style("fill", "white")   
+
             }
-            
+            console.log("new year state" + year_state)
         }
+
+
+        function dance(filtered_data) {
+
+            let head = d3.select(".headline")
+
+            svg.append("g")
+            .selectAll("path")
+            .data(filtered_data, d => d.group)
+            .join("path")
+            .attr("class", d => {
+                console.log(d)
+                return d.key
+            })
+            .transition()
+            // .duration(400)
+            .ease(d3.easeElastic)
+            .attr("fill", d => color(d.key))
+            .attr("d", area)
+        
+        }
+
+       
+
+        // function updateChart(index) {
+        //     const sel = container.select(`[data-index='${index}']`);
+        //     // const width = sel.attr('data-name');
+        //     stepSel.classed('is-active', (d, i) => i === index);
+        //     // container.select('.bar-inner').style('width', width);
+        //     if (data-index == 0){
+        //         update()
+        //     } else {
+        //         update()
+        //     }
+            
+        // }
 
 
 
@@ -366,68 +526,27 @@
 
             enterView({ //our main view function
                 selector: stepSel.nodes(),
-                offset: 0.2, //when the slide is 50% away then trigger your chart
+                offset: 0.3, //when the slide is 50% away then trigger your chart
                 enter: el => { //what's supposed to happen when the slide enters?
-                    const index = +d3.select(el).attr('data-index'); //extract the data-index attribute. this can be anything: a filter, a date, whatever.
-                    updateChart(index);
+                    // const index = +d3.select(el).attr('data-index'); //extract the data-index attribute. this can be anything: a filter, a date, whatever.
+                    update();
                 },
                 exit: el => { //what's supposed to happen when the slide exits?
-                    let index = +d3.select(el).attr('data-index');
-                    index = Math.max(0, index - 1);
-                    updateChart(index);
+                    // let index = +d3.select(el).attr('data-index');
+                    // index = Math.max(0, index - 1);
+                    update();
                 }
             });
-
         }
-        
+
+        init();
 
 
-        points.on("mouseover", (event, d) => {
-
-            points
-                .style("stroke", "#333333")
-                .style("stroke-width", .5)
-                .style("fill", "#c0cad8")
-                .style("fill-opacity", .5)
-
-            svg.select(".p-" + d.leaidC)
-                .style("stroke", "black")
-                .style("stroke-width", 2)
-                .style("fill", "yellow")
-                .style("fill-opacity", 1)
-                .raise()
-
-            let reScaleLang = d3.scaleThreshold()
-                .domain([0]) //make sure to put this in brackets!
-                .range(["below", "above"])
-
-            let diff = +d.mnav3poolgcs - 3
-
-            let lang = "In " + d.newname + ", " + d.nyt_abbrev + " the typical 3rd grade student scored "
-            lang += d3.format(".1f")(Math.abs(diff)) + " years " + reScaleLang(diff) + " his or her grade level."
-
-            popup
-                .style("opacity", 1)
-                .style("left", (event.x - 100) + "px")
-                .style("top", (event.y - 150) + "px")
-                .html(lang)
-
-        })
+        // var timer = d3.interval(update, 1500)
 
 
-        points.on("mouseout", (event, d) => {
-            // console.log(event)
-            points
-                .style("stroke", "#333333")
-                .style("stroke-width", .5)
-                .style("fill", "#c0cad8")
-
-            popup
-                .style("opacity", 0)
-
-        })
-
-
-    }) //end function
+      
+    })
+    
 
 </script>
